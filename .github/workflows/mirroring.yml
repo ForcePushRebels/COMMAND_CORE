@@ -1,0 +1,36 @@
+name: Mirroring to Gitlab
+
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "**"
+  delete:
+    branches:
+      - "**"
+
+jobs:
+  to_gitlab:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Nécessaire pour récupérer toutes les branches et tags
+          
+      - name: Configure GitLab remote
+        run: |
+          if ! git remote get-url gitlab > /dev/null 2>&1; then
+            git remote add gitlab git@gitlab-etu.openstack.etudis.eseo.fr:fisa-ise/pato/2025-2026/forcepushrebels/android.git
+          fi
+
+      - name: Push all branches
+        run: |
+          git fetch --prune
+          for branch in $(git branch -r | grep -v '\->' | sed 's/origin\///'); do
+            git push --force gitlab $branch:$branch
+          done
+
+      - name: Push all tags
+        run: |
+          git push --tags gitlab
